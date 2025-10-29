@@ -8,6 +8,6 @@ What genre combinations attracts me most?
 
 Which actors/directors appears most in movies ı enjoy?
 
-How much critical scores and awards affect my preferences?
+How much critical scores and award-winnings affect my preferences?
 
 
