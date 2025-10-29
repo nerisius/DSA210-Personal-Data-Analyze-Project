@@ -1,4 +1,4 @@
-# DSA210-Personal-Data-Analyze-Project
+# DSA210-Personal-Movie-Database-Project
 
 DSA210:Introduction to Data Science term project.
 
