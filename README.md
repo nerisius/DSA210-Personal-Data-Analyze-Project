@@ -10,4 +10,6 @@ Which actors/directors appears most in movies ı enjoy?
 
 How much critical scores and award-winnings affect my preferences?
 
+How my monthly/yearly watching habits change?
+
 
