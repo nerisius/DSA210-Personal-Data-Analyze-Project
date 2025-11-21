@@ -10,7 +10,7 @@ This project turns my viewing habits into a structured movie database and explor
 
 ## 1. Letterboxd Export
 
-Includes: watched movies, ratings and favorites.
+Includes: watched movies, ratings and favorites, dates of the watchings.
 
 Used as the foundation, each movie in the Letterboxd list will be matched with metadata from external APIs.
 
