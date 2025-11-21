@@ -3,8 +3,52 @@ import pandas as pd
 from datetime import datetime
 import os
 
-# Load TMDB API key
+# Load API keys
 API_KEY = os.getenv('TMDB_API_KEY') or input("Enter your TMDb API key: ")
+OMDB_KEY = os.getenv('OMDB_API_KEY') or input("Enter your OMDb API key: ")
+
+
+def get_omdb_data(title, year=None, omdb_api_key=None):
+    """Fetch ratings from OMDb API"""
+    if not omdb_api_key:
+        print("⚠️ OMDb API key not provided, skipping ratings")
+        return None
+    
+    params = {
+        "t": title,
+        "apikey": omdb_api_key
+    }
+    # Only add year if it's valid (4 digits)
+    if year and year != 'Unknown' and len(str(year)) == 4:
+        params["y"] = year
+
+    try:
+        response = requests.get("http://www.omdbapi.com/", params=params, timeout=5)
+        data = response.json()
+
+        if data.get("Response") == "False":
+            print(f"   ℹ️ OMDb: No match found for '{title}' ({year})")
+            return None
+
+        # Extract ratings
+        imdb = data.get("imdbRating", "N/A")
+        if imdb == "N/A":
+            imdb = None
+            
+        rt = None
+        for r in data.get("Ratings", []):
+            if r["Source"] == "Rotten Tomatoes":
+                rt = r["Value"]
+
+        print(f"   ✓ OMDb: Found ratings - IMDb: {imdb}, RT: {rt}")
+        return {
+            "imdb_rating": imdb,
+            "rt_rating": rt,
+        }
+    except Exception as e:
+        print(f"   ⚠️ Error fetching OMDb data: {e}")
+        return None
+
 
 class MovieDataCollector:
     def __init__(self, filename="movie_dataset.csv"):
@@ -14,6 +58,15 @@ class MovieDataCollector:
         if os.path.exists(filename):
             print(f"📂 Existing dataset found. Loading {filename}...")
             self.movies_df = pd.read_csv(filename)
+
+            # Add new columns if they don't exist
+            if 'imdb_rating' not in self.movies_df.columns:
+                self.movies_df['imdb_rating'] = None
+                print("   Added 'imdb_rating' column")
+            
+            if 'rt_rating' not in self.movies_df.columns:
+                self.movies_df['rt_rating'] = None
+                print("   Added 'rt_rating' column")
 
             # Convert list-like strings back to lists
             list_columns = ['genres', 'directors', 'cast', 'countries']
@@ -30,7 +83,7 @@ class MovieDataCollector:
             self.movies_df = pd.DataFrame(columns=[
                 'movie_id', 'title', 'release_year', 'release_date',
                 'runtime', 'genres', 'directors', 'cast',
-                'countries', 'collection_date'
+                'countries', 'imdb_rating', 'rt_rating', 'collection_date'
             ])
 
     def extract_movie_data(self, movie_data):
@@ -52,8 +105,8 @@ class MovieDataCollector:
             if p.get('job') == 'Director':
                 directors.append(p.get('name'))
 
-        # Cast (top 15)
-        cast = [actor['name'] for actor in movie_data.get('credits', {}).get('cast', [])[:15]]
+        # Cast (top 10)
+        cast = [actor['name'] for actor in movie_data.get('credits', {}).get('cast', [])[:10]]
 
         # Countries
         countries = [c['name'] for c in movie_data.get('production_countries', [])]
@@ -61,7 +114,7 @@ class MovieDataCollector:
         # Timestamp
         collection_date = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
 
-        return {
+        structured_data = {
             'movie_id': movie_id,
             'title': title,
             'release_date': release_date,
@@ -73,6 +126,24 @@ class MovieDataCollector:
             'countries': countries,
             'collection_date': collection_date
         }
+        
+        # Fetch OMDb data
+        print(f"   🔍 Fetching OMDb ratings for '{title}'...")
+        omdb_data = get_omdb_data(
+            title=structured_data['title'],
+            year=structured_data['release_year'],
+            omdb_api_key=OMDB_KEY
+        )
+        
+        # Add OMDb data if available
+        if omdb_data:
+            structured_data.update(omdb_data)
+        else:
+            # Add None values if OMDb data not found
+            structured_data['imdb_rating'] = None
+            structured_data['rt_rating'] = None
+
+        return structured_data
 
     def add_movie_to_dataframe(self, movie_data):
         """Add structured movie data to the DataFrame"""
@@ -102,39 +173,49 @@ class MovieDataCollector:
         else:
             print("❌ No data to save")
 
-    def display_dataset_info(self):
+
+    def update_missing_ratings(self):
+        """Update movies that are missing IMDb or RT ratings"""
         if self.movies_df.empty:
-            print("📊 Dataset is empty.")
+            print("❌ No movies in dataset.")
             return
-
-        print(f"\n📊 Dataset Information:")
-        print(f"   Total movies: {len(self.movies_df)}")
-        print(f"   Columns: {list(self.movies_df.columns)}")
-        print(f"   Latest addition: {self.movies_df.iloc[-1]['title']}")
-
-    def get_movie_statistics(self):
-        if self.movies_df.empty:
-            print("No data available.")
+        
+        # Find movies missing ratings
+        missing_ratings = self.movies_df[
+            self.movies_df['imdb_rating'].isna() | self.movies_df['rt_rating'].isna()
+        ]
+        
+        if missing_ratings.empty:
+            print("✅ All movies already have ratings!")
             return
+        
+        print(f"\n🔄 Found {len(missing_ratings)} movies missing ratings.")
+        print("Fetching ratings...\n")
+        
+        updated_count = 0
+        for idx, row in missing_ratings.iterrows():
+            title = row['title']
+            year = row['release_year']
+            
+            print(f"Processing: {title} ({year})")
+            omdb_data = get_omdb_data(title, year, OMDB_KEY)
+            
+            if omdb_data:
+                self.movies_df.at[idx, 'imdb_rating'] = omdb_data.get('imdb_rating')
+                self.movies_df.at[idx, 'rt_rating'] = omdb_data.get('rt_rating')
+                updated_count += 1
+            else:
+                # Set to None if still not found
+                self.movies_df.at[idx, 'imdb_rating'] = None
+                self.movies_df.at[idx, 'rt_rating'] = None
+        
+        print(f"\n✅ Updated {updated_count} movies with ratings.")
+        
+        # Ask to save
+        save = input("\nSave changes to CSV? (y/n): ").strip().lower()
+        if save == 'y':
+            self.save_to_csv()
 
-        print(f"\n📈 Dataset Statistics:")
-        print(f"   Total movies: {len(self.movies_df)}")
-        print(f"   Average runtime: {self.movies_df['runtime'].mean():.1f} minutes")
-
-        # Genre frequencies
-        all_genres = [genre for sub in self.movies_df['genres'] for genre in sub]
-        genre_counts = pd.Series(all_genres).value_counts()
-        if not genre_counts.empty:
-            print(f"   Most common genre: {genre_counts.index[0]}")
-
-        # Director frequencies
-        all_directors = [d for sub in self.movies_df['directors'] for d in sub]
-        director_counts = pd.Series(all_directors).value_counts()
-        if not director_counts.empty:
-            print(f"   Most frequent director: {director_counts.index[0]} ({director_counts.iloc[0]} movies)")
-
-
-######################################################################################################
 
 def display_movie_info(movie_data):
     credits = movie_data.get('credits', {})
@@ -156,18 +237,14 @@ def display_movie_info(movie_data):
         print(f"   {i}. {actor['name']} as {actor.get('character')}")
 
 
-#######################################################################################################
-
 def interactive_movie_search():
     collector = MovieDataCollector()
 
     while True:
         print("\n" + "🎬" * 20)
         print("1. Search for a movie")
-        print("2. Show dataset info")
-        print("3. Show statistics")
-        print("4. Save dataset")
-        print("5. Exit")
+        print("2. Save dataset")
+        print("3. Exit")
 
         choice = input("Select option (1-5): ").strip()
 
@@ -219,15 +296,9 @@ def interactive_movie_search():
             display_movie_info(movie_data)
 
         elif choice == '2':
-            collector.display_dataset_info()
-
-        elif choice == '3':
-            collector.get_movie_statistics()
-
-        elif choice == '4':
             collector.save_to_csv()
 
-        elif choice == '5':
+        elif choice == '3':
             if not collector.movies_df.empty:
                 save = input("Save before exit? (y/n): ").strip().lower()
                 if save == 'y':
