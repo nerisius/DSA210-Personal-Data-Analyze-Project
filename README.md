@@ -6,15 +6,15 @@ I am someone who watches movies regularly and enjoys discovering new directors, 
 
 This project turns my viewing habits into a structured movie database and explores which factors shape the kinds of movies I enjoy the most.
 
-# DATASET
+# 📦DATASET
 
-1. Letterboxd Export
+## 1. Letterboxd Export
 
 Includes: watched movies, ratings and favorites.
 
 Used as the foundation, each movie in the Letterboxd list will be matched with metadata from external APIs.
 
-2. TMDB API
+## 2. TMDB API
 
 Used to collect:
 
@@ -26,7 +26,7 @@ Genres
 
 Cast and directors
 
-3. OMDb API
+## 3. OMDb API
 
 Used to collect:
 
@@ -36,7 +36,7 @@ Rotten Tomatoes scores
 
 Oscar wins/nominations
 
-4. Additional Award Data (optional)
+## 4. Additional Award Data (optional)
 
 For more detailed award information, I may enrich the dataset using external sources containing major award nominations and wins.
 
