@@ -1,11 +1,13 @@
+from dotenv import load_dotenv
 import requests
 import pandas as pd
 from datetime import datetime
 import os
 
+load_dotenv()
 # Load API keys
-API_KEY = os.getenv('TMDB_API_KEY') or input("Enter your TMDb API key: ")
-OMDB_KEY = os.getenv('OMDB_API_KEY') or input("Enter your OMDb API key: ")
+API_KEY = os.getenv('TMDB_API_KEY') 
+OMDB_KEY = os.getenv('OMDB_API_KEY') 
 
 
 def get_omdb_data(title, year=None, omdb_api_key=None):
@@ -174,6 +176,7 @@ class MovieDataCollector:
             print("❌ No data to save")
 
 
+
     def update_missing_ratings(self):
         """Update movies that are missing IMDb or RT ratings"""
         if self.movies_df.empty:
@@ -216,35 +219,83 @@ class MovieDataCollector:
         if save == 'y':
             self.save_to_csv()
 
+######################################################################################################################################
+
+    def import_letterboxd_csv(csv_path, collector):
+        """Automatically import movies from Letterboxd export CSV."""
+        df = pd.read_csv(csv_path)
+
+        # Basic checks
+        if 'Name' not in df.columns or 'Year' not in df.columns:
+            print("❌ CSV must contain 'Name' and 'Year' columns.")
+            return
+
+        for idx, row in df.iterrows():
+            title = row['Name']
+            year = str(row['Year'])
+
+            print(f"\n📌 Processing [{idx+1}/{len(df)}] {title} ({year})")
+
+            # TMDB search
+            search_url = "https://api.themoviedb.org/3/search/movie"
+            params = {'api_key': API_KEY, 'query': title, 'Year': year}
+
+            response = requests.get(search_url, params=params)
+            data = response.json()
+
+            # Handle no results
+            if not data.get('results'):
+                print(f"❌ No TMDB result for '{title}' ({year})")
+                continue
+
+            # Take first match
+            selected_movie = data['results'][0]
+            movie_id = selected_movie['id']
+
+            # Fetch details
+            movie_url = f"https://api.themoviedb.org/3/movie/{movie_id}"
+            movie_params = {
+                'api_key': API_KEY,
+                'append_to_response': 'credits'
+            }
+
+            movie_response = requests.get(movie_url, params=movie_params)
+            movie_data = movie_response.json()
+
+            # Add to dataset
+            collector.add_movie_to_dataframe(movie_data)
+
+        print("\n🎉 Import complete!")
+        collector.save_to_csv()
+
+
+    ###############################################################################################################################
+
+
 
 def display_movie_info(movie_data):
     credits = movie_data.get('credits', {})
-    cast_data = credits.get('cast', [])[:10]
 
     directors = [p['name'] for p in credits.get('crew', []) if p.get('job') == 'Director']
     genres = [g['name'] for g in movie_data.get('genres', [])]
 
     release_date = movie_data.get('release_date', 'Unknown')
-    runtime = movie_data.get('runtime', 'Unknown')
 
-    print(f"\n🎬 {movie_data['title']} ({release_date[:4] if release_date != 'Unknown' else 'Unknown'})")
-    print(f"⏱️ Runtime: {runtime} minutes")
-    print(f"🎭 Genres: {', '.join(genres)}")
-    print(f"🎥 Directors: {', '.join(directors)}")
+    print(f"\n {movie_data['title']} ({release_date[:4] if release_date != 'Unknown' else 'Unknown'})")
+    print(f" Directors: {', '.join(directors)}")
 
-    print("\n🌟 Main Cast:")
-    for i, actor in enumerate(cast_data, 1):
-        print(f"   {i}. {actor['name']} as {actor.get('character')}")
 
 
 def interactive_movie_search():
     collector = MovieDataCollector()
 
     while True:
-        print("\n" + "🎬" * 20)
+        print("\n" + "*" * 20)
         print("1. Search for a movie")
         print("2. Save dataset")
-        print("3. Exit")
+        print("3. Import Letterboxd CSV")
+        print("4. Update missing IMDb/RT ratings")   
+        print("5. Exit")
 
         choice = input("Select option (1-5): ").strip()
 
@@ -299,16 +350,27 @@ def interactive_movie_search():
             collector.save_to_csv()
 
         elif choice == '3':
+            csv_path = input("Enter Letterboxd CSV path: ").strip()
+            if os.path.exists(csv_path):
+               import_letterboxd_csv(csv_path, collector)
+            else:
+               print("❌ File not found.")    
+
+
+        elif choice == '4':  # <-- handle the new option
+            collector.update_missing_ratings()       
+
+        elif choice == '5':
             if not collector.movies_df.empty:
                 save = input("Save before exit? (y/n): ").strip().lower()
                 if save == 'y':
                     collector.save_to_csv()
 
-            print("Goodbye! 👋")
+            print("Goodbye!")
             break
 
         else:
-            print("❌ Invalid option.")
+            print("Invalid option.")
 
 
 if __name__ == "__main__":
