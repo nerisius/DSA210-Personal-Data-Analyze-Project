@@ -42,10 +42,29 @@ def get_omdb_data(title, year=None, omdb_api_key=None):
             if r["Source"] == "Rotten Tomatoes":
                 rt = r["Value"]
 
+        awards_str = data.get("Awards", "") or ""
+        
+        oscar_wins = 0
+        oscar_nominations = 0
+
+        if "Oscar" in awards_str:
+            # Wins
+            import re
+            win_match = re.search(r"Won (\d+) Oscar", awards_str)
+            if win_match:
+                oscar_wins = int(win_match.group(1))
+
+            # Nominations
+            nom_match = re.search(r"Nominated for (\d+) Oscar", awards_str)
+            if nom_match:
+                oscar_nominations = int(nom_match.group(1))        
+
         print(f"   ✓ OMDb: Found ratings - IMDb: {imdb}, RT: {rt}")
         return {
             "imdb_rating": imdb,
             "rt_rating": rt,
+            "oscar_wins": oscar_wins,
+            "oscar_nominations": oscar_nominations,
         }
     except Exception as e:
         print(f"   ⚠️ Error fetching OMDb data: {e}")
@@ -69,6 +88,10 @@ class MovieDataCollector:
             if 'rt_rating' not in self.movies_df.columns:
                 self.movies_df['rt_rating'] = None
                 print("   Added 'rt_rating' column")
+
+            for col in ['imdb_rating', 'rt_rating', 'oscar_wins', 'oscar_nominations']:
+                if col not in self.movies_df.columns:
+                    self.movies_df[col] = None    
 
             # Convert list-like strings back to lists
             list_columns = ['genres', 'directors', 'cast', 'countries']
@@ -177,47 +200,7 @@ class MovieDataCollector:
 
 
 
-    def update_missing_ratings(self):
-        """Update movies that are missing IMDb or RT ratings"""
-        if self.movies_df.empty:
-            print("❌ No movies in dataset.")
-            return
-        
-        # Find movies missing ratings
-        missing_ratings = self.movies_df[
-            self.movies_df['imdb_rating'].isna() | self.movies_df['rt_rating'].isna()
-        ]
-        
-        if missing_ratings.empty:
-            print("✅ All movies already have ratings!")
-            return
-        
-        print(f"\n🔄 Found {len(missing_ratings)} movies missing ratings.")
-        print("Fetching ratings...\n")
-        
-        updated_count = 0
-        for idx, row in missing_ratings.iterrows():
-            title = row['title']
-            year = row['release_year']
-            
-            print(f"Processing: {title} ({year})")
-            omdb_data = get_omdb_data(title, year, OMDB_KEY)
-            
-            if omdb_data:
-                self.movies_df.at[idx, 'imdb_rating'] = omdb_data.get('imdb_rating')
-                self.movies_df.at[idx, 'rt_rating'] = omdb_data.get('rt_rating')
-                updated_count += 1
-            else:
-                # Set to None if still not found
-                self.movies_df.at[idx, 'imdb_rating'] = None
-                self.movies_df.at[idx, 'rt_rating'] = None
-        
-        print(f"\n✅ Updated {updated_count} movies with ratings.")
-        
-        # Ask to save
-        save = input("\nSave changes to CSV? (y/n): ").strip().lower()
-        if save == 'y':
-            self.save_to_csv()
+
 
 ######################################################################################################################################
 
@@ -294,7 +277,7 @@ def interactive_movie_search():
         print("1. Search for a movie")
         print("2. Save dataset")
         print("3. Import Letterboxd CSV")
-        print("4. Update missing IMDb/RT ratings")   
+        print("4. Update missing OMDB data")   
         print("5. Exit")
 
         choice = input("Select option (1-5): ").strip()
@@ -358,7 +341,7 @@ def interactive_movie_search():
 
 
         elif choice == '4':  # <-- handle the new option
-            collector.update_missing_ratings()       
+            collector.update_missing_omdb_data()       
 
         elif choice == '5':
             if not collector.movies_df.empty:
