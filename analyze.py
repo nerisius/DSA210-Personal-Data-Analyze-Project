@@ -39,7 +39,7 @@ plot_barh_with_values(actor_counts.head(15), "Most watched actors", "orange", x_
 #Most watched genres
 all_genres = [g for sublist in df['genres'] for g in sublist]
 genre_counts = pd.Series(all_genres).value_counts()
-print("\n🎭 En çok izlediğin türler:")
+print("\n Most watched genres:")
 print(genre_counts.head(15))
 plot_barh_with_values(genre_counts.head(15), "Most watched genres", "green", x_min=5)
 
