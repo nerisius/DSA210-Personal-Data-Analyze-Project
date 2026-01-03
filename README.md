@@ -62,8 +62,6 @@ Award wins and nominations
 
 My personal rating/favoring (from Letterboxd)
 
-Date watched
-
 # ❓ Research Questions
 
 I aim to answer questions such as:
@@ -80,9 +78,6 @@ Do I have hidden favorites that I repeatedly gravitate toward?
 
 Are the movies I love also critically acclaimed, or do I prefer niche/underrated films?
 
-4. How do my watching habits change over time?
-
-Trends across months and years (e.g., seasonality, mood-dependent watching habits)
 
 # 🧪 Hypotheses
 
