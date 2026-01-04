@@ -112,7 +112,7 @@ The null hypothesis is **rejected**, indicating that the average IMDb rating of 
 
 **Method**
 - One-sample t-test
-- Threshold: RT = 60%
+- Threshold: RT = 70%
 - Significance level: α = 0.05
 
 **Results**
