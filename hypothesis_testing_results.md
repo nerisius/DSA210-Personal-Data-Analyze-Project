@@ -95,8 +95,8 @@ This result supports the alternative hypothesis and suggests that **cast-based p
 - Significance level: α = 0.05
 
 **Results**
-- Sample mean IMDb rating: *[insert value]*
-- p-value: *[insert value]*
+- t-stat: 23.5787
+- p-value: 6.1876
 
 **Conclusion**
 The null hypothesis is **rejected**, indicating that the average IMDb rating of watched movies is significantly higher than 6.5.
@@ -116,8 +116,8 @@ The null hypothesis is **rejected**, indicating that the average IMDb rating of 
 - Significance level: α = 0.05
 
 **Results**
-- Sample mean RT score: *[insert value]*
-- p-value: *[insert value]*
+- t-stat: 16.9950
+- p-value: 1.0083
 
 **Conclusion**
 The null hypothesis is **rejected**, suggesting a strong preference for critically well-reviewed movies.
