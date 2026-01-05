@@ -2,21 +2,17 @@
 
 # MOTIVATION 
 
-I am someone who watches movies regularly and enjoys discovering new directors, genres, and cinematic styles. Since I actively use Letterboxd to log my viewing history and favorite movies, I want to analyze my own movie-watching behavior using real data.
-
-This project turns my viewing habits into a structured movie database and explores which factors shape the kinds of movies I enjoy the most.
+I have been logging my cinema journey since age 15. This project aims to move beyond simple recording to understand the underlying patterns of my taste. 
 
 # 📦DATASET
 
 ## 1. Letterboxd Export
 
-Includes: watched movies, ratings and favorites, dates of the watchings.
+Includes: watched movies, ratings and favorites.
 
 Used as the foundation, each movie in the Letterboxd list will be matched with metadata from external APIs.
 
 ## 2. TMDB API
-
-Used to collect:
 
 Movie titles
 
@@ -28,17 +24,12 @@ Cast and directors
 
 ## 3. OMDb API
 
-Used to collect:
-
 IMDb rating and votes
 
 Rotten Tomatoes scores
 
 Oscar wins/nominations
 
-## 4. Additional Award Data (optional)
-
-For more detailed award information, I may enrich the dataset using external sources containing major award nominations and wins.
 
 # 🎬 Metadata Features I Will Analyze
 
@@ -104,6 +95,28 @@ There is no relationship between critical scores and my decision to watch a movi
 Alternative Hypothesis (H3):
 
 I am more likely to watch movies with higher IMDb or Rotten Tomatoes scores.
+
+
+# 📊 Key Findings & Results
+
+Genre Analysis: I found a strong preference for Comedy and Comedy-Drama combination.
+
+Actor and Director Bias: While there's no significant evidence that shows a bias towards directors, some actors appear significantly more than others in the movies ı watched.
+
+Critical Scores: Movies ı watch have significantly higher critical scores than certain benchmarks, which are 7.5 imdb and 75% RT
+
+# 🤖 Machine Learning Implementation
+
+I implemented a Logistic Regression to predict whether I would "Like" a movie (binary classification) based on:
+
+Features: genre, IMDb Score, RT score, runtime, oscar_wins, oscar_nominations.
+
+The Outcome: The model performed poorly, achieving an overall accuracy of only 25% and an F1-score of 0.27. To improve accuracy, ı added other variables such as actors and directors but instead of improving, it dropped significantly.
+
+The Recall Paradox: The model achieved a high Recall (0.94) for "Liked" movies, meaning it caught almost all of my favorites. However, its Precision (0.16) was very low, it predicted a "Like" for almost every movie I watched.
+
+The Interpretation: The metadata (Genre, Runtime, IMDb Score) is not enough to define my taste. My preference is governed by subjective variables that aren't captured in a standard database such as cinematography style, emotional resonance, or the specific mood I was in when watching.
+
 
 
 
