@@ -54,7 +54,7 @@ To test for actor and director bias, a **chi-square goodness-of-fit test** was c
 - **Expected frequencies:**  
   A **uniform distribution**, assuming no preference among actors (each actor is equally likely).
 
-This test evaluates whether favorite movies disproportionately feature specific actors beyond what would be expected by chance.
+This test evaluates whether watched movies disproportionately feature specific actors beyond what would be expected by chance.
 
 ---
 
