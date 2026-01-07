@@ -1,8 +1,6 @@
 # DSA210-Personal-Movie-Database-Project
 
-# MOTIVATION 
-
-I have been logging my cinema journey since age 15. This project aims to move beyond simple recording to understand the underlying patterns of my taste. 
+Here is my presentation for the project: https://docs.google.com/presentation/d/1_2J2UZrosgRD0xXAjPrArovDtW9Qd-kW/edit?usp=drive_link&ouid=104301784387529282432&rtpof=true&sd=true 
 
 # 📦DATASET
 
